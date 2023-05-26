@@ -1,0 +1,37 @@
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = 'mon2pcap'
+version = '1.0.0'
+description = 'Convert StarOS "monitor subscriber" or "monitor protocol" ASCII dump to PCAP'
+readme = 'README.md'
+authors = [
+  { name = 'Artur Russu', email='arussu@cisco.com' },
+]
+license = {file = 'LICENSE'}
+requires-python = '>=3.6'
+dependencies = [
+    'scapy',
+    'Jinja2',
+    'tqdm',
+]
+classifiers = [        
+    'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+    'Environment :: Console',
+    'Intended Audience :: Telecommunications Industry',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Topic :: System :: Networking',
+]
+
+[project.urls]
+homepage = "https://github.com/mon2pcap"
+
+[project.scripts]
+mon2pcap = 'mon2pcap.main:main'

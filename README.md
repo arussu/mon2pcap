@@ -18,7 +18,7 @@ The layers had to be generated for wireshark and other tools working with pcap f
 - [pip - The Python Package Installer](https://pip.pypa.io/en/stable/installation/)
 - _mon2pcap_ installation:
   ```
-  $ pip install git+https://wwwin-github.cisco.com/arussu/mon2pcap.git
+  $ pip install mon2pcap
   ```
 
 ## Usage

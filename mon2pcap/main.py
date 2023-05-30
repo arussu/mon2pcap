@@ -60,7 +60,7 @@ def main():
             skip_malformed=args.skip_malformed)
 
     parsed_file.write_packets(show_progress=show_progress)
-    print(f'PCAP generated at "{parsed_file.fout}"')
+    print(f'{chr(10)}PCAP generated at "{parsed_file.fout}"')
     print_stats(parsed_file.stats)
 
 if __name__ == "__main__":

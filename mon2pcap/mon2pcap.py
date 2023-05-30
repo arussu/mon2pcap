@@ -42,6 +42,7 @@ class Mon2Pcap():
         self.packets = []
         self._stats = STATS.copy()
         self._linecount = None
+        self._progress = None
 
         assert self._exclude is None or isinstance(self._exclude, list)
         assert isinstance(self._skip_malformed, bool)
@@ -68,10 +69,12 @@ class Mon2Pcap():
         """
         with open(self._fin, 'r', encoding='utf-8', errors='ignore') as opened_file:
             if show_progress:
-                progress = tqdm(opened_file, unit=' lines', total=self.linecount, leave=True)
+                self._progress = tqdm(opened_file, unit=' lines', total=self.linecount, leave=True)
+            
             for pnum, packet_text in enumerate(chunk_packet_from_input(opened_file), 1):
                 if show_progress:
-                    progress.update(len(packet_text))
+                    self._progress.update(len(packet_text))
+
                 try:
                     packet = self._parse_packet(packet_text)
                 except IgnoredPacket as err:
@@ -94,6 +97,9 @@ class Mon2Pcap():
                     raise
                 except Exception:
                     if self._skip_malformed:
+                        timestamp = packet_text[1].split('Eventid')[0].split()[-1]
+                        log_text = f'PACKET #{pnum:06} Failed to parse packet text received at {timestamp}'
+                        mon2pcap_log.debug(log_text, exc_info=True)
                         continue
                     p_text = ''.join(packet_text)
                     log_text = f'PACKET #{pnum:06} Failed to parse packet text:{chr(10)}{p_text}'
@@ -101,7 +107,12 @@ class Mon2Pcap():
                     raise
 
                 if packet:
+                    log_text = f'PACKET #{pnum:06} Parsed {packet}'
+                    mon2pcap_log.debug(log_text)
                     yield packet
+
+        # reset progress
+        self._progress = None
 
     def _parse_packet(self, text) -> 'packets.Packet':
         """ Parse the packet text
@@ -119,9 +130,9 @@ class Mon2Pcap():
             raise FilteredPacket(f'Filtered packet of {protocol} protocol')
 
         packet = PARSERS.get(protocol)
+        packet = packet(text)
         packet.eventid = eventid
         packet.protocol = protocol
-        packet = packet(text)
 
         self._stats[protocol] += 1
         return packet
@@ -167,10 +178,11 @@ class Mon2Pcap():
             if num == count:
                 break
 
-    def write_packets(self, count:int = 0, show_progress:bool = False):
+    def write_packets(self, count:int = 0, packets_per_write:int = 0, show_progress:bool = False):
         """ Write packets to file
 
-        :param count:  (Default value = 0) number of packet to write
+        :param count: number of packets to write, '0' = ALL
+        :param packets_per_write: how many packets to buffer before one write operation
         :param show_progress: bool: show progress as we parse the file
         """
 
@@ -178,33 +190,21 @@ class Mon2Pcap():
 
         buffer = []
         append_to_file = False # overwrite if existing
-        """ 
-        We can consume too much memory if we try to buffer all packets in case of large files.
-        Writing each 1 packet is also not good idea.
-        Will use a buffer of N packets and write each N packets.
-        """
-        write_each_n_packets = 10_000
 
-        if count and show_progress:
-            progress = tqdm(self._get_packets(), unit=' packets', total=count, leave=True)
-            packets_generator = self._get_packets()
-        else:
-            packets_generator = self._get_packets(show_progress)
-
-        for num, packet in enumerate(packets_generator):
-            if count and show_progress:
-                progress.update(1)
-
-            if len(buffer) == write_each_n_packets:
-                PcapWriter(self._fout, append=append_to_file, sync=True).write(buffer)
-                buffer.clear()
-
-                if num == write_each_n_packets:
-                    append_to_file = True
+        for num, packet in enumerate(self._get_packets(show_progress)):
 
             buffer.append(packet.scapy_packet)
 
-            if count and (num == count):
+            if len(buffer) == packets_per_write:
+                PcapWriter(self._fout, append=append_to_file, sync=True).write(buffer)
+                buffer.clear()
+
+                if num == packets_per_write:
+                    append_to_file = True
+
+            if count and (num == count-1):
+                # reset progress
+                self._progress = None
                 break
 
         if buffer:

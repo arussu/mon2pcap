@@ -650,6 +650,8 @@ class Diameter(Packet):
 
         try:
             length = int(self.raw_text[4].split('REQ')[0].split()[3][1:])
+        except ValueError:
+            length = int(self.raw_text[3].split('REQ')[0].split()[3][1:])
         except IndexError:        
             for l in self.raw_text:
                 if 'Message Length' in l:

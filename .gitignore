@@ -1,7 +1,8 @@
 # Compiled files
 __pycache__/
 *.py[cod]
-build
+build/
+dist/
 
 # Packaging related files
 *.egg

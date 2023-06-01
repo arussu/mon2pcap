@@ -31,7 +31,7 @@ classifiers = [
 ]
 
 [project.urls]
-homepage = "https://github.com/mon2pcap"
+repository = "https://github.com/arussu/mon2pcap"
 
 [project.scripts]
 mon2pcap = 'mon2pcap.main:main'

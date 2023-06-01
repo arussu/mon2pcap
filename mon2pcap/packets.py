@@ -11,7 +11,7 @@ from struct import pack
 from scapy.all import Ether,IP,IPv6,UDP,SCTP,SCTPChunkData
 
 from .constants import RE_HEXDUMP, RE_HEXDUMP_ASCII
-from .errors import IENotFound, HexdumpValidationError
+from .errors import IENotFound, HexdumpValidationError, IgnoredPacket
 
 mon2pcap_log = logging.getLogger(__name__)
 
@@ -226,6 +226,12 @@ Hexdump len = {hexdump_len} {hexdump}... )
 
         return text
 
+    def _validate_content(self) -> None:
+        """ If there is no hexdump, there won't be any content
+        """
+        if not self.raw_text:
+            raise IgnoredPacket('No hexdump found in packet')
+
     def _get_hexdump(self, pkt_len:int) -> str:
         """Get hexdump only from packet
 
@@ -281,6 +287,7 @@ class Gtpc(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[4]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.ip_src, self.ip_dst, self.sport, self.dport, self.length = self._get_l3_l4_data()
@@ -324,6 +331,7 @@ class GtpcV2(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[4]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.ip_src, self.ip_dst, self.sport, self.dport, self.length = self._get_l3_l4_data()
@@ -377,6 +385,7 @@ class Gtpu(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[4]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.ip_src, self.ip_dst, self.sport, self.dport, self.length = self._get_l3_l4_data()
@@ -431,6 +440,7 @@ class Radius(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[5]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.ip_src, self.ip_dst, self.sport, self.dport, self.length = self._get_l3_l4_data()
@@ -472,6 +482,7 @@ class UserL3(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[3].split()[0]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.ip_src, self.ip_dst, self.sport, self.dport, self.length = self._get_l3_l4_data()
@@ -551,6 +562,7 @@ class Css(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[3].split()[0]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.ip_src, self.ip_dst, self.sport, self.dport, self.length = self._get_l3_l4_data()
@@ -625,6 +637,7 @@ class Diameter(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[3]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.ip_src, self.ip_dst, self.sport, self.dport, self.length = self._get_l3_l4_data()
@@ -698,6 +711,7 @@ class Ranap(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         self.ip_version = 4
         self.arrive_time = self._get_arrive_time()
         self.direction = self._get_direction()
@@ -743,6 +757,7 @@ class Rua(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         self.ip_version = 4
         self.direction = self._get_direction()
         self.arrive_time = self._get_arrive_time()        
@@ -787,6 +802,7 @@ class S1Ap(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[4]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.direction = self._get_direction()
@@ -846,6 +862,7 @@ class SGs(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[4]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.direction = self._get_direction()
@@ -889,6 +906,7 @@ class Bssgp(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         self.ip_version = 4
         self.direction = self._get_direction()
         self.arrive_time = self._get_arrive_time()        
@@ -933,6 +951,7 @@ class Tcap(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         self.ip_version = 4
         self.direction = self._get_direction()
         self.arrive_time = self._get_arrive_time()        
@@ -978,6 +997,7 @@ class Sccp(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         self.ip_version = 4
         self.direction = self._get_direction()
         self.arrive_time = self._get_arrive_time()        
@@ -1021,6 +1041,7 @@ class IkeV2(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[4]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.direction = self._get_direction()
@@ -1062,6 +1083,7 @@ class L2tp(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[4]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.direction = self._get_direction()
@@ -1103,6 +1125,7 @@ class Ppp(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         self.direction = self._get_direction()
         self.arrive_time = self._get_arrive_time()        
         self.length = self._get_l3_l4_data()
@@ -1132,6 +1155,7 @@ class Dns(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[3].split()[2]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.direction = self._get_direction()
@@ -1172,6 +1196,7 @@ class Dhcp(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[4]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.direction = self._get_direction()
@@ -1213,6 +1238,7 @@ class L3Tunnel(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[0]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.direction = self._get_direction()
@@ -1259,6 +1285,7 @@ class Pfcp(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[4]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.direction = self._get_direction()
@@ -1313,6 +1340,7 @@ class Gtpp(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[4]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.direction = self._get_direction()
@@ -1354,6 +1382,7 @@ class Sls(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[2].split()[4]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.direction = self._get_direction()
@@ -1404,6 +1433,7 @@ class Sctp(Packet):
     """
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
+        self._validate_content()
         an_ip_address = self.raw_text[3].split()[2]
         self.ip_version = self._probe_ip_ver(an_ip_address)
         self.direction = self._get_direction()

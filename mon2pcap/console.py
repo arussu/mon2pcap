@@ -5,7 +5,7 @@ import logging
 import argparse
 import jinja2
 
-from collection import OrderedDict
+from collections import OrderedDict
 
 from .mon2pcap import Mon2Pcap, __version__
 from .packets import PARSERS

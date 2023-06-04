@@ -13,7 +13,7 @@ The layers had to be generated for wireshark and other tools working with pcap f
 
 ## Installation
 ### Prerequisites
-- [Python 3.6+](https://www.python.org/downloads/)  
+- [Python 3.8.1 or newer](https://www.python.org/downloads/)  
   ⚠️ Installers usually ask to add Python to `PATH`, do it now and you will avoid headaches later. 
 - [pip - The Python Package Installer](https://pip.pypa.io/en/stable/installation/)
 - _mon2pcap_ installation:

@@ -9,19 +9,22 @@ repository = "https://github.com/arussu/mon2pcap"
 keywords = ["scapy", "mon2pcap"]
 classifiers = [
     "Intended Audience :: Telecommunications Industry",
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: System :: Networking",
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.8.1"
 scapy = "^2.5.0"
 tqdm = "^4.65.0"
 Jinja2 = "^3.1.2"
 
 [tool.poetry.group.dev.dependencies]
-flake8 = "^6.0.0"
 black = "23.3.0"
+flake8 = "^6.0.0"
 
 [[tool.poetry.source]]
 name = "PyPI"

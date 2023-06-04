@@ -3,16 +3,17 @@
 import sys
 import logging
 import argparse
-import jinja2
 
 from collections import OrderedDict
 import importlib.metadata
+import jinja2
 
 from .mon2pcap import Mon2Pcap
 from .packets import PARSERS
 from .constants import COLORS
 
 __version__ = importlib.metadata.version(__package__ or __name__)
+
 
 def print_stats(stats: OrderedDict):
     """Print statistics nicely

@@ -1,37 +1,38 @@
-[build-system]
-# Minimum requirements for the build system to execute.
-requires = ["setuptools>=61.0.0"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = 'mon2pcap'
-version = '1.0.0'
-description = 'Convert StarOS "monitor subscriber" or "monitor protocol" ASCII dump to PCAP'
-readme = 'README.md'
-authors = [
-  { name = 'Artur Russu', email='arussu@cisco.com' },
-]
-license = {file = 'LICENSE'}
-requires-python = '>=3.6'
-dependencies = [
-    'scapy',
-    'Jinja2',
-    'tqdm',
-]
-classifiers = [        
-    'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-    'Environment :: Console',
-    'Intended Audience :: Telecommunications Industry',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.6',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
-    'Topic :: System :: Networking',
-]
-
-[project.urls]
+[tool.poetry]
+name = "mon2pcap"
+version = "1.0.0"
+description = "Convert StarOS \"monitor subscriber\" or \"monitor protocol\" ASCII dump to PCAP"
+authors = ["Artur Russu <arussu@cisco.com>"]
+license = "GPL-3.0-only"
+readme = "README.md"
 repository = "https://github.com/arussu/mon2pcap"
+keywords = ["scapy", "mon2pcap"]
+classifiers = [
+    "Intended Audience :: Telecommunications Industry",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Networking",
+]
 
-[project.scripts]
-mon2pcap = 'mon2pcap.main:main'
+[tool.poetry.dependencies]
+python = "^3.11"
+scapy = "^2.5.0"
+tqdm = "^4.65.0"
+Jinja2 = "^3.1.2"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.0.0"
+black = "23.3.0"
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
+[tool.black]
+line-length = 88
+
+[tool.poetry.scripts]
+mon2pcap = "mon2pcap.console:run"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

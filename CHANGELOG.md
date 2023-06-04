@@ -9,9 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - `Fixed` - for any bug fixes.
 - `Security` - in case of vulnerabilities.
 
+
+## [1.0.3] - 2023-06-04:
+### Changed
+- There is no reason to not support earlier python versions.  
+  Python dependency lowered to 3.8.1
+
 ## [1.0.2] - 2023-06-04:
 ### Added
 - single source of truth for version variable
+### Fixed
 - import fix (typo)
 
 ## [1.0.0] - 2023-06-01:
@@ -20,3 +27,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 [1.0.0]: https://github.com/arussu/mon2pcap/releases/tag/v1.0.0
 [1.0.2]: https://github.com/arussu/mon2pcap/compare/v1.0.0...v1.0.2
+[1.0.3]: https://github.com/arussu/mon2pcap/compare/v1.0.3...v1.0.3

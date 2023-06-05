@@ -30,6 +30,7 @@ STATS = OrderedDict(
         ("GTPP", 0),
         ("SLS", 0),
         ("SCTP", 0),
+        ("LMISF", 0),
         ("Ignored", 0),
         ("Filtered", 0),
     ]
@@ -131,5 +132,6 @@ def protocol_mapping(eventid: str) -> str | None:
         "206302": "SLS",
         "87301": "SCTP",
         "87302": "SCTP",
+        "69126": "LMISF",
     }
     return table.get(eventid)

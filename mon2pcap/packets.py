@@ -1745,30 +1745,127 @@ class Sctp(Packet):
         return scapy_packet
 
 
+class Lmisf(Packet):
+    """LMISF packet
+
+    :param raw_text: list: Lines in list of packet text
+    StarOS does not decode correctly LIMSF protocol!!
+
+    Sample:
+    Monday June 05 2023
+    <<<<OUTBOUND  08:54:53:397 Eventid:69126(3)
+    [Unknown(0)]GTPv2C Tx PDU, from :0 to :0 (154)
+    ---------------------------Packet Dump [154 Bytes]---------------------------
+    40 02 01 34 00 0c 00 04  39 31 39 33 32 36 37 33        @..4.... 91932673
+    37 37 33 33 00 04 00 9d  05 00 00 80 00 01 00 a0        7733.... ........
+    00 00 08 00 5c 64 7d db  1d 00 06 06 9e 00 0f 00        ....\d}. ........
+    05 38 30 39 32 37 39 35  33 31 32 31 33 39 30 36        .8092795 31213906
+    00 10 00 06 31 31 32 32  33 33 34 34 35 35 36 36        ....1122 33445566
+    37 37 38 38 00 06 00 0b  08 12 54 63 12 34 00 01        7788.... ..Tc.4..
+    00 26 05 00 12 00 50 08  05 00 00 00 00 00 00 00        .&....P. ........
+    00 00 00 00 00 00 00 00  00 00 0b 00 08 73 74 61        ........ .....sta
+    72 65 6e 74 2e 63 6f 6d  00 01 00 53 00 00 04 00        rent.com ...S....
+    a3 21 7b 31 01 00 01 00  5d 01                          .!{1.... ].
+    
+    0x0000   4002 0134 000c 0004 3931 3933 3236 3733        @..4....91932673
+    0x0010   3737 3333 0004 009d 0500 0080 0001 00a0        7733............
+    0x0020   0000 0800 5c64 7ddb 1d00 0606 9e00 0f00        ....\d}.........
+    0x0030   0538 3039 3237 3935 3331 3231 3339 3036        .809279531213906
+    0x0040   0010 0006 3131 3232 3333 3434 3535 3636        ....112233445566
+    0x0050   3737 3838 0006 000b 0812 5463 1234 0001        7788......Tc.4..
+    0x0060   0026 0500 1200 5008 0500 0000 0000 0000        .&....P.........
+    0x0070   0000 0000 0000 0000 0000 0b00 0873 7461        .............sta
+    0x0080   7265 6e74 2e63 6f6d 0001 0053 0000 0400        rent.com...S....
+    0x0090   a321 7b31 0100 0100 5d01                       .!{1....].
+
+    GTPv2C decoder :(
+
+    Eth / IP / UDP layers added.
+    IP src = IP dst = 0.0.0.0
+    UDP sport = 9201
+    UDP dport = 9200
+
+    TODO: parse IP and Transport layers when we'll have the decoder.
+    """
+
+    def __init__(self, raw_text: list):
+        super().__init__(raw_text)
+        self._validate_content()
+        #an_ip_address = self.raw_text[2].split()[4]
+        #self.ip_version = self._probe_ip_ver(an_ip_address)
+        self.ip_version = 4
+        self.direction = self._get_direction()
+        self.arrive_time = self._get_arrive_time()
+        (
+            self.ip_src,
+            self.ip_dst,
+            self.sport,
+            self.dport,
+            self.length,
+        ) = self._get_l3_l4_data()
+        self.hexdump = self._get_hexdump(self.length)
+        self._hexdump_sanity_check(self.hexdump, self.length)
+        self.scapy_packet = self._get_scapy_packet()
+
+    def _get_l3_l4_data(self):
+        """ """
+        line = self.raw_text[2].split()
+        ip_src = "0.0.0.0"
+        ip_dst = "0.0.0.0"
+        sport = 9201
+        dport = 9200
+        length = int(line[-1].split("(")[1][:-1])
+
+
+        return ip_src, ip_dst, sport, dport, length
+
+    def _get_scapy_packet(self):
+        """ """
+        if self.ip_version == 4:
+            scapy_packet = (
+                Ether(src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x0800)
+                / IP(src=self.ip_src, dst=self.ip_dst)
+                / UDP(sport=self.sport, dport=self.dport)
+                / bytes.fromhex(self.hexdump)
+            )
+
+        if self.ip_version == 6:
+            scapy_packet = (
+                Ether(src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x86DD)
+                / IPv6(src=self.ip_src, dst=self.ip_dst)
+                / UDP(sport=self.sport, dport=self.dport)
+                / bytes.fromhex(self.hexdump)
+            )
+
+        scapy_packet.time = self.arrive_time
+        return scapy_packet
+
+
 PARSERS = {
-    "GTPC": Gtpc,
-    "GTPCv2": GtpcV2,
-    "GTPU": Gtpu,
-    "RADIUS": Radius,
-    "USERL3": UserL3,
+    "GTPC"       : Gtpc,
+    "GTPCv2"     : GtpcV2,
+    "GTPU"       : Gtpu,
+    "RADIUS"     : Radius,
+    "USERL3"     : UserL3,
     "USERL3_IPV6": UserL3,
-    "CSS": Css,
-    "DIAMETER": Diameter,
-    "RANAP": Ranap,
-    "RUA": Rua,
-    "S1AP": S1Ap,
-    "SGS": SGs,
-    "BSSGP": Bssgp,
-    "TCAP": Tcap,
-    "SCCP": Sccp,
-    "IKEv2": IkeV2,
-    "L2TP": L2tp,
-    "PPP": Ppp,
-    "DNS": Dns,
-    "DHCP": Dhcp,
-    "L3_TUNNEL": L3Tunnel,
-    "PFCP": Pfcp,
-    "GTPP": Gtpp,
-    "SLS": Sls,
-    "SCTP": Sctp,
+    "CSS"        : Css,
+    "DIAMETER"   : Diameter,
+    "RANAP"      : Ranap,
+    "RUA"        : Rua,
+    "S1AP"       : S1Ap,
+    "SGS"        : SGs,
+    "BSSGP"      : Bssgp,
+    "TCAP"       : Tcap,
+    "SCCP"       : Sccp,
+    "IKEv2"      : IkeV2,
+    "L2TP"       : L2tp,
+    "PPP"        : Ppp,
+    "DNS"        : Dns,
+    "PFCP"       : Pfcp,
+    "DHCP"       : Dhcp,
+    "L3_TUNNEL"  : L3Tunnel,
+    "GTPP"       : Gtpp,
+    "SLS"        : Sls,
+    "SCTP"       : Sctp,
+    "LMISF"      : Lmisf, 
 }

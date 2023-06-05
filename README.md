@@ -57,5 +57,37 @@ Found #14 valid packets
  Ignored      : 4
  ```
 
+## Implemented protocols
+SPGW/GGSN/SAEGW:
+ - `GTPC        (24)` ON  by default
+ - `EGTPC       (74)` ON  by default
+ - `Radius Auth (13)` ON  by default
+ - `Radiu Acct  (14)` ON  by default
+ - `EC Diameter (36)` ON  by default
+ - `GTPU        (26)` OFF by default
+ - `User L3     (19)` OFF by default
+ - `CSS Data    (34)` OFF by default
+ - `IPSec IKEv2 (40)` OFF by default
+ - `DNS Client  (70)` OFF by default
+ - `L2TP        (21)` ON  by default
+ - `Radius COA  (31)` OFF by default 
+ - `DHCP        (28)` OFF by default 
+ - `L3 Tunnel   (33)` OFF by default //tested with GRE
+ - `PFCP        (49)` ON  by default
+ - `GTPP        (27)` ON  by default
+ - `LMISF       (39)` OFF by default
+
+---
+MME/SGSN:
+  - `GTPC       (24)` ON  by default
+  - `S1AP       (81)` ON  by default
+  - `DIAMETER   (36)` ON  by default
+  - `RANAP      (56)` OFF by default
+  - `BSSGP      (59)` OFF by default
+  - `TCAP       (54)` OFF by default
+  - `SCCP       (53)` OFF by default
+  - `SLS        (94)` ON  by default
+  - `SCTP       (51)` OFF by default
+
 ## License
 [GPLv3]('./LICENSE')

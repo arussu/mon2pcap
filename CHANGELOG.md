@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - `Fixed` - for any bug fixes.
 - `Security` - in case of vulnerabilities.
 
+## [1.0.4] - 2023-06-05:
+### Fixed
+- import fix 
 
 ## [1.0.3] - 2023-06-04:
 ### Changed
@@ -27,4 +30,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 [1.0.0]: https://github.com/arussu/mon2pcap/releases/tag/v1.0.0
 [1.0.2]: https://github.com/arussu/mon2pcap/compare/v1.0.0...v1.0.2
-[1.0.3]: https://github.com/arussu/mon2pcap/compare/v1.0.3...v1.0.3
+[1.0.3]: https://github.com/arussu/mon2pcap/compare/v1.0.2...v1.0.3
+[1.0.4]: https://github.com/arussu/mon2pcap/compare/v1.0.3...v1.0.4

@@ -4,6 +4,7 @@ Library to convert StarOS "monitor subscriber" or "monitor protocol" ASCII dump 
 
 import logging
 
-__all__ = tuple("Mon2Pcap")
+from .mon2pcap import Mon2Pcap
+__all__ = ["Mon2Pcap"]
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())

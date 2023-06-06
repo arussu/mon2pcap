@@ -89,5 +89,8 @@ MME/SGSN:
   - `SLS        (94)` ON  by default
   - `SCTP       (51)` OFF by default
 
+## Changelog
+[CHANGELOG](CHANGELOG.md)
+
 ## License
-[GPLv3]('./LICENSE')
+[GPLv3](LICENSE)

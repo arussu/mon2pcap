@@ -31,7 +31,6 @@ def chunk_packet_from_input(file):
                 "\x00", ""
             )  # replace `NUL` character seen in some files
             if not line.strip():
-                chunk.append(line)
                 continue
             if line.strip().split()[0] in days_of_week and num > 2:
                 num = 0

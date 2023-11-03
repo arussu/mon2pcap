@@ -27,9 +27,7 @@ def chunk_packet_from_input(file):
     num = 0
     for lnum, line in enumerate(file, 1):
         try:
-            line = line.replace("\t", "    ").replace(
-                "\x00", ""
-            )  # replace `NUL` character seen in some files
+            line = line.replace("\t", "    ").replace("\x00", "")  # replace `NUL` character seen in some files
             if not line.strip():
                 continue
             if line.strip().split()[0] in days_of_week and num > 2:

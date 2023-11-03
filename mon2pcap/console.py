@@ -1,16 +1,16 @@
 #!/usr/bin/python
 
-import sys
-import logging
 import argparse
-
-from collections import OrderedDict
 import importlib.metadata
+import logging
+import sys
+from collections import OrderedDict
+
 import jinja2
 
+from .constants import COLORS
 from .mon2pcap import Mon2Pcap
 from .packets import PARSERS
-from .constants import COLORS
 
 __version__ = importlib.metadata.version(__package__ or __name__)
 
@@ -74,12 +74,8 @@ def run():
         dest="skip_malformed",
         help="Skip malformed packets",
     )
-    parser.add_argument(
-        "-v", "--version", action="version", version=f"{parser.prog} {__version__}"
-    )
-    parser.add_argument(
-        "-d", "--debug", action="store_true", dest="debug", help="debug level logging"
-    )
+    parser.add_argument("-v", "--version", action="version", version=f"{parser.prog} {__version__}")
+    parser.add_argument("-d", "--debug", action="store_true", dest="debug", help="debug level logging")
     args = parser.parse_args()
 
     show_progress = True

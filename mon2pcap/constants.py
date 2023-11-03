@@ -2,6 +2,7 @@
 
 import re
 from collections import OrderedDict
+from typing import Optional
 
 STATS = OrderedDict(
     [
@@ -37,9 +38,7 @@ STATS = OrderedDict(
 )
 
 RE_HEXDUMP = re.compile(r"^([0-9a-f]{2,4}\s?){1,8}$", re.IGNORECASE)
-RE_HEXDUMP_ASCII = re.compile(
-    r"^0x[0-9a-f]{4}\s+([0-9a-f]{1,4}\s?){1,8}", re.IGNORECASE
-)
+RE_HEXDUMP_ASCII = re.compile(r"^0x[0-9a-f]{4}\s+([0-9a-f]{1,4}\s?){1,8}", re.IGNORECASE)
 COLORS = {
     "HEADER": "\033[95m",
     "OKBLUE": "\033[94m",
@@ -52,12 +51,13 @@ COLORS = {
 }
 
 
-def protocol_mapping(eventid: str) -> str | None:
+def protocol_mapping(eventid: str) -> Optional[str]:
     """Match the eventid to the protocol name as str
 
     :param eventid: The packet `eventid`
     :param eventid: str:
 
+    :returns: Protocol name
     """
     table = {
         "47000": "GTPC",

@@ -1,17 +1,17 @@
 """ mon2pcap.py """
 import logging
-
 from collections.abc import Iterable
 from pathlib import Path
+
 from tqdm import tqdm
 
 logging.getLogger("scapy.runtime").setLevel(logging.CRITICAL)
 from scapy.all import PcapWriter
 
-from .errors import *
 from .constants import STATS, protocol_mapping
-from .packets import PARSERS
+from .errors import FilteredPacket, HexdumpValidationError, IgnoredPacket
 from .helpers import chunk_packet_from_input, linecount
+from .packets import PARSERS, Packet
 
 # pylint: disable=logging-fstring-interpolation
 mon2pcap_log = logging.getLogger(__name__)
@@ -67,9 +67,7 @@ class Mon2Pcap:
         """Yield parsed packets"""
         with open(self._fin, "r", encoding="utf-8", errors="ignore") as opened_file:
             if show_progress:
-                self._progress = tqdm(
-                    opened_file, unit=" lines", total=self.linecount, leave=True
-                )
+                self._progress = tqdm(opened_file, unit=" lines", total=self.linecount, leave=True)
 
             for pnum, packet_text in enumerate(chunk_packet_from_input(opened_file), 1):
                 if show_progress:
@@ -79,9 +77,7 @@ class Mon2Pcap:
                     packet = self._parse_packet(packet_text)
                 except IgnoredPacket as err:
                     self._stats["Ignored"] += 1
-                    mon2pcap_log.debug(
-                        f"PACKET #{pnum:06} Could not parse: {repr(err)}"
-                    )
+                    mon2pcap_log.debug(f"PACKET #{pnum:06} Could not parse: {repr(err)}")
                     continue
                 except FilteredPacket:
                     mon2pcap_log.debug(f"PACKET #{pnum:06} Ignoring filtered packet")
@@ -89,9 +85,7 @@ class Mon2Pcap:
                     continue
                 except HexdumpValidationError:
                     if self._skip_malformed:
-                        mon2pcap_log.debug(
-                            f"PACKET #{pnum:06} did not pass hexdump validation, ignoring"
-                        )
+                        mon2pcap_log.debug(f"PACKET #{pnum:06} did not pass hexdump validation, ignoring")
                         self._stats["Ignored"] += 1
                         continue
 
@@ -118,11 +112,11 @@ class Mon2Pcap:
         # reset progress
         self._progress = None
 
-    def _parse_packet(self, text) -> "packets.Packet":
+    def _parse_packet(self, text) -> Packet:
         """Parse the packet text
 
         :param text:
-        :return: `packets.Packet` instance
+        :return: Packet instance
         """
 
         eventid = self._get_event_id(text)
@@ -169,9 +163,7 @@ class Mon2Pcap:
         :param show_progress: bool: show progress as we parse the file
         """
         if count and show_progress:
-            progress = tqdm(
-                self._get_packets(), unit=" packets", total=count, leave=True
-            )
+            progress = tqdm(self._get_packets(), unit=" packets", total=count, leave=True)
             packets_generator = self._get_packets()
         else:
             packets_generator = self._get_packets(show_progress)
@@ -184,9 +176,7 @@ class Mon2Pcap:
             if num == count:
                 break
 
-    def write_packets(
-        self, count: int = 0, packets_per_write: int = 0, show_progress: bool = False
-    ):
+    def write_packets(self, count: int = 0, packets_per_write: int = 0, show_progress: bool = False):
         """Write packets to file
 
         :param count: number of packets to write, '0' = ALL

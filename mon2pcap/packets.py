@@ -1,17 +1,17 @@
 """ packets.py 
 Packets definition file
 """
-import re
-import time
 import datetime
 import ipaddress
 import logging
-
+import re
+import time
 from struct import pack
-from scapy.all import Ether, IP, IPv6, UDP, SCTP, SCTPChunkData
+
+from scapy.all import IP, SCTP, UDP, Ether, IPv6, SCTPChunkData
 
 from .constants import RE_HEXDUMP, RE_HEXDUMP_ASCII
-from .errors import IENotFound, HexdumpValidationError, IgnoredPacket
+from .errors import HexdumpValidationError, IENotFound, IgnoredPacket
 
 mon2pcap_log = logging.getLogger(__name__)
 
@@ -175,16 +175,15 @@ Hexdump len = {hexdump_len} {hexdump}... )
             hexdump=self.hexdump[:30],
         )
 
-    def _get_arrive_time(self) -> "time":
-        """Extract packet arrival time"""
+    def _get_arrive_time(self) -> float:
+        """Extract packet arrival time
+
+        :return: float representation of time
+        """
         date_str = " ".join(self.raw_text[0].strip().split()[1:])
         time_str = self.raw_text[1].split("Eventid")[0].split()[-1]
-        arrive_time = datetime.datetime.strptime(
-            f"{date_str} {time_str}", "%B %d %Y %H:%M:%S:%f"
-        )
-        arrive_time = time.mktime(arrive_time.timetuple()) + (
-            arrive_time.microsecond / 1000000.0
-        )
+        times_from_text = datetime.datetime.strptime(f"{date_str} {time_str}", "%B %d %Y %H:%M:%S:%f")
+        arrive_time = time.mktime(times_from_text.timetuple()) + (times_from_text.microsecond / 1000000.0)
         return arrive_time
 
     def _get_direction(self) -> str:
@@ -196,7 +195,7 @@ Hexdump len = {hexdump_len} {hexdump}... )
             direction = direction.split(" ")[0][4:]
         return direction
 
-    def _probe_ip_ver(self, line) -> "ipaddress":
+    def _probe_ip_ver(self, line) -> int:
         """Determine if we have ipv4 or ipv6 packet.
          SAMPLES:
           240b:c0e0:201:2003:301:1:0:f01.34271 # with dot delimited port
@@ -209,6 +208,7 @@ Hexdump len = {hexdump_len} {hexdump}... )
         :param text: str: an ip address text from packet
         :param line:
 
+        :returns: IP address version as int
         """
         ip_addr_text = text = line
         try:
@@ -247,9 +247,7 @@ Hexdump len = {hexdump_len} {hexdump}... )
         """
         num_lines_to_remove = 0
         for line in reversed(text):
-            if bool(RE_HEXDUMP.match(line.strip())) or bool(
-                RE_HEXDUMP_ASCII.match(line.strip())
-            ):
+            if bool(RE_HEXDUMP.match(line.strip())) or bool(RE_HEXDUMP_ASCII.match(line.strip())):
                 break
             num_lines_to_remove += 1
 
@@ -287,9 +285,10 @@ Hexdump len = {hexdump_len} {hexdump}... )
             dump = "".join(["".join(x.split()) for x in text])
         return dump
 
-    def _hexdump_sanity_check(self, hexdump: str, pkt_len: int) -> bool:
-        """Return True if there are only hexadecimal characters and
-        if hexdump length matches calculated length
+    def _hexdump_sanity_check(self, hexdump: str, pkt_len: int):
+        """Check if there are only hexadecimal characters and
+        if hexdump length matches calculated length.
+        Otherwise raise an exception
 
         :param hexdump: str: the hexdumpt to validate
         :param pkt_len: int: packet length
@@ -586,12 +585,10 @@ class UserL3(Packet):
                 sport = 0
                 dport = 0
 
-            for l in self.raw_text:
-                if ", len" in l:
+            for line_in_text in self.raw_text:
+                if ", len" in line_in_text:
                     length = int(
-                        l.split(", len")[len(l.split(", len")) - 1]
-                        .split(")")[0]
-                        .split(",")[0]
+                        line_in_text.split(", len")[len(line_in_text.split(", len")) - 1].split(")")[0].split(",")[0]
                     )
                     break
 
@@ -611,12 +608,12 @@ class UserL3(Packet):
                 sport = 0
                 dport = 0
 
-            for l in self.raw_text:
-                if "(len " in l:
+            for line_in_text in self.raw_text:
+                if "(len " in line_in_text:
                     try:
-                        length = int(l.split("len ")[1].split(",")[0])
+                        length = int(line_in_text.split("len ")[1].split(",")[0])
                     except ValueError:
-                        length = int(l.split("len ")[1][:-2])
+                        length = int(line_in_text.split("len ")[1][:-2])
                     # ipv6 Add 40 bytes to the len
                     length = length + 40
                     break
@@ -626,14 +623,14 @@ class UserL3(Packet):
     def _get_scapy_packet(self):
         """ """
         if self.ip_version == 4:
-            scapy_packet = Ether(
-                src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x0800
-            ) / bytes.fromhex(self.hexdump)
+            scapy_packet = Ether(src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x0800) / bytes.fromhex(
+                self.hexdump
+            )
 
         if self.ip_version == 6:
-            scapy_packet = Ether(
-                src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x86DD
-            ) / bytes.fromhex(self.hexdump)
+            scapy_packet = Ether(src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x86DD) / bytes.fromhex(
+                self.hexdump
+            )
 
         scapy_packet.time = self.arrive_time
         return scapy_packet
@@ -695,20 +692,14 @@ class Css(Packet):
         if self.ip_version == 4:
             for l_val in self.raw_text[3:]:
                 if ", len" in l_val:
-                    length = int(
-                        l_val.split(", len")[len(l_val.split(", len")) - 1]
-                        .split(")")[0]
-                        .split(",")[0]
-                    )
+                    length = int(l_val.split(", len")[len(l_val.split(", len")) - 1].split(")")[0].split(",")[0])
                     break
 
         if self.ip_version == 6:
             for l_val in self.raw_text[3:]:
                 if "(len " in l_val:
                     # ipv6 Add 40 bytes to the len
-                    length = (
-                        int(l_val.split("len ")[1].split(",")[0].split(")")[0]) + 40
-                    )
+                    length = int(l_val.split("len ")[1].split(",")[0].split(")")[0]) + 40
                     break
 
         return ip_src, ip_dst, sport, dport, length
@@ -716,14 +707,14 @@ class Css(Packet):
     def _get_scapy_packet(self):
         """ """
         if self.ip_version == 4:
-            scapy_packet = Ether(
-                src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x0800
-            ) / bytes.fromhex(self.hexdump)
+            scapy_packet = Ether(src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x0800) / bytes.fromhex(
+                self.hexdump
+            )
 
         if self.ip_version == 6:
-            scapy_packet = Ether(
-                src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x86DD
-            ) / bytes.fromhex(self.hexdump)
+            scapy_packet = Ether(src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x86DD) / bytes.fromhex(
+                self.hexdump
+            )
 
         scapy_packet.time = self.arrive_time
         return scapy_packet
@@ -773,14 +764,14 @@ class Diameter(Packet):
         except ValueError:
             length = int(self.raw_text[3].split("REQ")[0].split()[3][1:])
         except IndexError:
-            for l in self.raw_text:
-                if "Message Length" in l:
+            for line_in_text in self.raw_text:
+                if "Message Length" in line_in_text:
                     try:
-                        length = int(l.strip().split(": ")[1])
+                        length = int(line_in_text.strip().split(": ")[1])
                     except (IndexError, ValueError):
                         pass
                     try:
-                        length = int(l.strip().split(": ")[1].split("(")[1][:-1])
+                        length = int(line_in_text.strip().split(": ")[1].split("(")[1][:-1])
                     except (IndexError, ValueError):
                         pass
 
@@ -1351,9 +1342,9 @@ class Ppp(Packet):
 
     def _get_scapy_packet(self):
         """ """
-        scapy_packet = Ether(
-            src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0xC021
-        ) / bytes.fromhex(self.hexdump[8:])
+        scapy_packet = Ether(src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0xC021) / bytes.fromhex(
+            self.hexdump[8:]
+        )
 
         scapy_packet.time = self.arrive_time
         return scapy_packet
@@ -1494,10 +1485,10 @@ class L3Tunnel(Packet):
             sport = 0
             dport = 0
 
-            for l in self.raw_text:
-                if ", len " in l:
+            for line_in_text in self.raw_text:
+                if ", len " in line_in_text:
                     # adding here 38 bytes for GRE + IP + Ethernet headers
-                    length = int(l.split()[-1][:-1]) + 38
+                    length = int(line_in_text.split()[-1][:-1]) + 38
 
             if not length:
                 raise IENotFound("Could not determine the length of packet")
@@ -1507,9 +1498,9 @@ class L3Tunnel(Packet):
     def _get_scapy_packet(self):
         """ """
         if self.ip_version == 4:
-            scapy_packet = Ether(
-                src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x0800
-            ) / bytes.fromhex(self.hexdump)
+            scapy_packet = Ether(src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x0800) / bytes.fromhex(
+                self.hexdump
+            )
 
         scapy_packet.time = self.arrive_time
         return scapy_packet
@@ -1737,9 +1728,9 @@ class Sctp(Packet):
     def _get_scapy_packet(self):
         """ """
         if self.ip_version == 4:
-            scapy_packet = Ether(
-                src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x0800
-            ) / bytes.fromhex(self.hexdump)
+            scapy_packet = Ether(src="00:00:00:00:00:00", dst="00:00:00:00:00:00", type=0x0800) / bytes.fromhex(
+                self.hexdump
+            )
 
         scapy_packet.time = self.arrive_time
         return scapy_packet
@@ -1766,7 +1757,7 @@ class Lmisf(Packet):
     00 00 00 00 00 00 00 00  00 00 0b 00 08 73 74 61        ........ .....sta
     72 65 6e 74 2e 63 6f 6d  00 01 00 53 00 00 04 00        rent.com ...S....
     a3 21 7b 31 01 00 01 00  5d 01                          .!{1.... ].
-    
+
     0x0000   4002 0134 000c 0004 3931 3933 3236 3733        @..4....91932673
     0x0010   3737 3333 0004 009d 0500 0080 0001 00a0        7733............
     0x0020   0000 0800 5c64 7ddb 1d00 0606 9e00 0f00        ....\d}.........
@@ -1791,8 +1782,8 @@ class Lmisf(Packet):
     def __init__(self, raw_text: list):
         super().__init__(raw_text)
         self._validate_content()
-        #an_ip_address = self.raw_text[2].split()[4]
-        #self.ip_version = self._probe_ip_ver(an_ip_address)
+        # an_ip_address = self.raw_text[2].split()[4]
+        # self.ip_version = self._probe_ip_ver(an_ip_address)
         self.ip_version = 4
         self.direction = self._get_direction()
         self.arrive_time = self._get_arrive_time()
@@ -1815,7 +1806,6 @@ class Lmisf(Packet):
         sport = 9201
         dport = 9200
         length = int(line[-1].split("(")[1][:-1])
-
 
         return ip_src, ip_dst, sport, dport, length
 
@@ -1842,30 +1832,30 @@ class Lmisf(Packet):
 
 
 PARSERS = {
-    "GTPC"       : Gtpc,
-    "GTPCv2"     : GtpcV2,
-    "GTPU"       : Gtpu,
-    "RADIUS"     : Radius,
-    "USERL3"     : UserL3,
+    "GTPC": Gtpc,
+    "GTPCv2": GtpcV2,
+    "GTPU": Gtpu,
+    "RADIUS": Radius,
+    "USERL3": UserL3,
     "USERL3_IPV6": UserL3,
-    "CSS"        : Css,
-    "DIAMETER"   : Diameter,
-    "RANAP"      : Ranap,
-    "RUA"        : Rua,
-    "S1AP"       : S1Ap,
-    "SGS"        : SGs,
-    "BSSGP"      : Bssgp,
-    "TCAP"       : Tcap,
-    "SCCP"       : Sccp,
-    "IKEv2"      : IkeV2,
-    "L2TP"       : L2tp,
-    "PPP"        : Ppp,
-    "DNS"        : Dns,
-    "PFCP"       : Pfcp,
-    "DHCP"       : Dhcp,
-    "L3_TUNNEL"  : L3Tunnel,
-    "GTPP"       : Gtpp,
-    "SLS"        : Sls,
-    "SCTP"       : Sctp,
-    "LMISF"      : Lmisf, 
+    "CSS": Css,
+    "DIAMETER": Diameter,
+    "RANAP": Ranap,
+    "RUA": Rua,
+    "S1AP": S1Ap,
+    "SGS": SGs,
+    "BSSGP": Bssgp,
+    "TCAP": Tcap,
+    "SCCP": Sccp,
+    "IKEv2": IkeV2,
+    "L2TP": L2tp,
+    "PPP": Ppp,
+    "DNS": Dns,
+    "PFCP": Pfcp,
+    "DHCP": Dhcp,
+    "L3_TUNNEL": L3Tunnel,
+    "GTPP": Gtpp,
+    "SLS": Sls,
+    "SCTP": Sctp,
+    "LMISF": Lmisf,
 }

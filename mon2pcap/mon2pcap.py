@@ -1,6 +1,9 @@
 """ mon2pcap.py """
+
+from __future__ import annotations
+
 import logging
-from collections.abc import Iterable
+from typing import Iterable
 from pathlib import Path
 
 from tqdm import tqdm

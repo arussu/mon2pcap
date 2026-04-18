@@ -7,3 +7,9 @@ dist/
 # Packaging related files
 *.egg
 *.egg-info
+
+# Virtual environment
+.venv/
+
+# Pytest cache
+.pytest_cache/

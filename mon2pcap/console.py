@@ -1,40 +1,38 @@
 #!/usr/bin/python
+"""console.py — Command-line entry point for mon2pcap."""
 
 import argparse
-import importlib.metadata
 import logging
 import sys
-from collections import OrderedDict
+from typing import Dict
 
-import jinja2
+try:
+    from importlib.metadata import version
+except ImportError:
+    from importlib_metadata import version  # type: ignore[no-redef]
 
 from .constants import COLORS
 from .mon2pcap import Mon2Pcap
 from .packets import PARSERS
 
-__version__ = importlib.metadata.version(__package__ or __name__)
+__version__ = version(__package__ or __name__)
 
 
-def print_stats(stats: OrderedDict):
-    """Print statistics nicely
-    :param stats: Stats dict
+def print_stats(stats: Dict[str, int]) -> None:
+    """Print per-protocol packet counts to stdout.
 
+    :param stats: Protocol-keyed counter dict (as returned by
+        :attr:`Mon2Pcap.stats`).
     """
     total = sum(stats.values()) - (stats["Ignored"] + stats["Filtered"])
-    environment = jinja2.Environment(autoescape=True)
-    template = environment.from_string(
-        """
-Found #{{ [ COLORS["OKGREEN"], total, COLORS["ENDC"] ]|join }} valid packets
-========================
-    {%- for key, value in stats.items() %}
- {%- if value != 0 %}
- {{ "%-12s"|format(key) }} : {{ value }}
- {%- endif %}
-    {%- endfor %}
-    """
-    )
-    rendered = template.render(COLORS=COLORS, stats=stats, total=total)
-    print(rendered)
+    lines = [
+        f"\nFound #{COLORS['OKGREEN']}{total}{COLORS['ENDC']} valid packets",
+        "========================",
+    ]
+    for key, value in stats.items():
+        if value:
+            lines.append(f" {key:<12} : {value}")
+    print("\n".join(lines))
 
 
 def run():
@@ -97,7 +95,7 @@ def run():
     )
 
     parsed_file.write_packets(show_progress=show_progress)
-    print(f'{chr(10)}PCAP generated at "{parsed_file.fout}"')
+    print(f'\nPCAP generated at "{parsed_file.fout}"')
     print_stats(parsed_file.stats)
 
 

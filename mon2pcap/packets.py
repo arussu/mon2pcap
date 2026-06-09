@@ -39,6 +39,10 @@ _RE_HEX_CHARS = re.compile(r"^[a-f0-9]+$", re.IGNORECASE)
 # The word-boundary anchors prevent false matches on tokens like "L2TP".
 _RE_DIAMETER_LENGTH = re.compile(r"\bL(\d+)\b")
 
+# Matches the first length value after "Message Length:" in verbose Diameter
+# headers.  The value may be decimal ("584") or hexadecimal ("0x000248").
+_RE_DIAMETER_MESSAGE_LENGTH_VALUE = re.compile(r"^\s*(0x[0-9a-fA-F]+|\d+)")
+
 
 def get_gprs_ns_header(bvci):
     """
@@ -651,7 +655,8 @@ class Diameter(Packet):
 
             Diameter-EAP-Request Diameter STa v1 L612 REQ PXY
 
-        Some verbose/decoded formats instead write ``Message Length: 612``.
+        Some verbose/decoded formats instead write ``Message Length: 612`` or
+        ``Message Length: 0x000264 (612)``.
 
         Returns ``None`` when no length can be found so the caller can decide
         how to handle it (``_get_l3_l4_data`` raises ``IENotFound``).
@@ -669,23 +674,21 @@ class Diameter(Packet):
             if m:
                 return int(m.group(1))
 
-        # Fallback: verbose decoded format — "Message Length: 612" or
-        # "Message Length: 612(0x264)".
+        # Fallback: verbose decoded format — "Message Length: 612",
+        # "Message Length: 612(0x264)", or "Message Length: 0x000264 (612)".
         for text_line in self.raw_text:
             if "Message Length" not in text_line:
                 continue
-            parts = text_line.strip().split(": ", 1)
+            parts = text_line.strip().split(":", 1)
             if len(parts) < 2:
                 continue
             value = parts[1]
-            try:
-                return int(value)
-            except ValueError:
-                pass
-            try:
-                return int(value.split("(")[0].strip())
-            except (IndexError, ValueError):
-                pass
+            m = _RE_DIAMETER_MESSAGE_LENGTH_VALUE.search(value)
+            if not m:
+                continue
+            length_value = m.group(1)
+            base = 16 if length_value.lower().startswith("0x") else 10
+            return int(length_value, base)
 
         return None
 

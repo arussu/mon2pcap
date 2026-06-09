@@ -1,6 +1,6 @@
 [project]
 name = "mon2pcap"
-version = "1.0.8"
+version = "1.0.9"
 description = "Convert StarOS \"monitor subscriber\" or \"monitor protocol\" ASCII dump to PCAP"
 authors = [{name = "Artur Russu", email = "arussu@cisco.com"}]
 license = {text = "GPL-3.0-only"}

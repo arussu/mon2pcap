@@ -65,6 +65,18 @@ MESSAGE_LENGTH_HEX = [
     "    Message Length: 128(0x80)\n",
 ]
 
+# Header with "Message Length: 0x000248    (584)" — hexadecimal value first,
+# decimal value parenthesised as seen in verbose decoded StarOS output.
+MESSAGE_LENGTH_HEX_FIRST = [
+    "Tuesday May 26 2026\n",
+    "<<<<OUTBOUND  From diamproxy:49 diamproxy_rlf.c:553 (Callid 57e3030a) 11:24:16:993 Eventid:81990(5)\n",
+    "Diameter message from 10.35.60.38:39887 to 10.35.10.88:3003\n",
+    "  Base Header Information:\n",
+    "   Version:            0x01        (1)\n",
+    "   Message Length:     0x000248    (584)\n",
+    "   Command Code:       0x000110    (272) Credit-Control-Request \n",
+]
+
 # Hexdump in "0xNNNN   hh hh ..." format (3 spaces after offset).
 # The old slice line[7:46] started 2 chars inside the padding and ended 2 chars
 # before the last hex group, silently truncating every line's last hex pair.
@@ -128,6 +140,11 @@ class TestDiameterLengthExtraction:
         d = _make_diameter(MESSAGE_LENGTH_HEX)
         assert d._extract_diameter_length() == 128
 
+    def test_message_length_line_hex_first(self):
+        """'Message Length: 0x000248    (584)' fallback path."""
+        d = _make_diameter(MESSAGE_LENGTH_HEX_FIRST)
+        assert d._extract_diameter_length() == 584
+
     def test_no_length_returns_none(self):
         """Returns ``None`` when no length can be found."""
         d = _make_diameter(NO_LENGTH)
@@ -151,6 +168,12 @@ class TestDiameterL3L4Data:
         d = _make_diameter(EAP_REQUEST)
         _, _, _, _, length = d._get_l3_l4_data()
         assert length == 612
+
+    def test_hex_first_message_length(self):
+        """Length is parsed from verbose decoded hex-first header."""
+        d = _make_diameter(MESSAGE_LENGTH_HEX_FIRST)
+        _, _, _, _, length = d._get_l3_l4_data()
+        assert length == 584
 
     def test_no_length_raises_ie_not_found(self):
         """``IENotFound`` is raised — not a bare ``IndexError`` — when the
